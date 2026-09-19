@@ -1,0 +1,52 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+dependencies {
+    api project(':pulse-core')
+    compileOnly project(':pulse-ftc-stubs')
+
+    testImplementation project(':pulse-ftc-stubs')
+    testImplementation project(':pulse-testkit')
+    testImplementation platform("org.junit:junit-bom:${rootProject.ext.junitBomVersion}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+                'Implementation-Title': 'PULSE FTC',
+                'Implementation-Version': archiveVersion,
+                'Automatic-Module-Name': 'org.allsparks.pulse.ftc'
+        )
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'pulse-ftc'
+            pom {
+                name = 'PULSE FTC'
+                description = 'FTC/REV adapters for PULSE. Compile against the official FTC SDK on the robot.'
+                url = 'https://github.com/The-Allsparks/PULSE'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,80 @@
+plugins {
+    id 'com.diffplug.spotless' version '8.10.2' apply false
+}
+
+ext {
+    pulseGroup = 'org.allsparks'
+    pulseVersion = '0.1.0-SNAPSHOT'
+    junitBomVersion = '5.10.2'
+    contractsVersion = '0.1.0-SNAPSHOT'
+    // FTC SDK 11.2.0 (DECODE 2025-2026). pulse-ftc compiles against this in CI.
+    ftcSdkVersion = '11.2.0'
+}
+
+subprojects { sub ->
+    sub.group = rootProject.ext.pulseGroup
+    sub.version = rootProject.ext.pulseVersion
+
+    sub.pluginManager.withPlugin('java-library') {
+        sub.java {
+            sourceCompatibility = JavaVersion.VERSION_11
+            targetCompatibility = JavaVersion.VERSION_11
+            withSourcesJar()
+            withJavadocJar()
+        }
+        sub.repositories {
+            mavenCentral()
+            maven {
+                name = 'GitHubPackagesAllsparksContracts'
+                url = uri('https://maven.pkg.github.com/The-Allsparks/allsparks-contracts')
+                credentials {
+                    username = findProperty('gpr.user') ?: System.getenv('GPR_USERNAME') ?: System.getenv('GITHUB_ACTOR') ?: ''
+                    password = findProperty('gpr.token') ?: System.getenv('GPR_TOKEN') ?: System.getenv('GITHUB_TOKEN') ?: ''
+                }
+            }
+        }
+        sub.dependencies {
+            testRuntimeOnly platform("org.junit:junit-bom:${rootProject.ext.junitBomVersion}")
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        }
+        sub.tasks.named('javadoc', Javadoc) { javadoc ->
+            javadoc.options.encoding = 'UTF-8'
+            javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+            javadoc.failOnError = true
+        }
+        sub.tasks.withType(JavaCompile).configureEach { compile ->
+            compile.options.encoding = 'UTF-8'
+            compile.options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
+        }
+        if (sub.name != 'pulse-ftc-stubs') {
+            sub.apply plugin: 'com.diffplug.spotless'
+            sub.spotless {
+                java {
+                    palantirJavaFormat()
+                    target 'src/**/*.java'
+                }
+            }
+        }
+    }
+}
+
+tasks.register('test') {
+    dependsOn ':pulse-core:test', ':pulse-ftc:test', ':pulse-testkit:test'
+}
+
+tasks.register('check') {
+    dependsOn ':pulse-core:check', ':pulse-ftc:check', ':pulse-testkit:check', ':pulse-examples:compileJava'
+}
+
+tasks.register('javadocAll') {
+    dependsOn ':pulse-core:javadoc', ':pulse-ftc:javadoc', ':pulse-testkit:javadoc'
+}
+
+tasks.register('assembleReleaseArtifacts') {
+    group = 'build'
+    description = 'Assemble robot-facing jars: pulse-core and pulse-ftc only.'
+    dependsOn ':pulse-core:assemble', ':pulse-ftc:assemble'
+}
+
+apply from: 'gradle/ftc-sdk-compile.gradle'
+apply from: 'gradle/robot-artifacts.gradle'

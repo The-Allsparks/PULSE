@@ -1,0 +1,27 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(':pulse-core')
+    testImplementation platform("org.junit:junit-bom:${rootProject.ext.junitBomVersion}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+                'Implementation-Title': 'PULSE Testkit',
+                'Implementation-Version': archiveVersion,
+                'Automatic-Module-Name': 'org.allsparks.pulse.testkit'
+        )
+    }
+}

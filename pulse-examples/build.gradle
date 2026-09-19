@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':pulse-core')
+    implementation project(':pulse-ftc')
+    compileOnly project(':pulse-ftc-stubs')
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+                'Implementation-Title': 'PULSE Examples',
+                'Implementation-Version': archiveVersion
+        )
+    }
+}

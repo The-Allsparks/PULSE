@@ -1,0 +1,68 @@
+def forbiddenRobotModules = [':pulse-ftc-stubs', ':pulse-testkit', ':pulse-examples'] as Set
+def forbiddenArtifactNames = ['pulse-ftc-stubs', 'pulse-testkit', 'pulse-examples'] as Set
+
+gradle.projectsEvaluated {
+    def ftcProject = project(':pulse-ftc')
+    ftcProject.tasks.register('assertRobotFacingClasspath') {
+        group = 'verification'
+        description = 'Fail if stubs or testkit appear on pulse-ftc api/implementation/runtime.'
+        dependsOn ftcProject.tasks.named('generatePomFileForMavenJavaPublication')
+        doLast {
+            def violations = []
+            ['api', 'implementation', 'runtimeOnly', 'runtimeClasspath'].each { name ->
+                def configuration = ftcProject.configurations.findByName(name)
+                if (configuration == null) {
+                    return
+                }
+                configuration.dependencies.withType(ProjectDependency).each { dependency ->
+                    def path = dependency.path
+                    if (forbiddenRobotModules.contains(path)) {
+                        violations << "${name} project ${path}"
+                    }
+                }
+            }
+            def pomFile = ftcProject.layout.buildDirectory.file('publications/mavenJava/pom-default.xml').get().asFile
+            if (!pomFile.isFile()) {
+                throw new GradleException("Missing generated pulse-ftc POM at ${pomFile}")
+            }
+            def pomText = pomFile.getText('UTF-8')
+            forbiddenArtifactNames.each { name ->
+                if (pomText.contains("<artifactId>${name}</artifactId>")) {
+                    violations << "pulse-ftc POM depends on ${name}"
+                }
+            }
+            if (!violations.isEmpty()) {
+                throw new GradleException(
+                        "pulse-ftc robot classpath includes stubs or testkit:\n  "
+                                + violations.join('\n  '))
+            }
+        }
+    }
+
+    ftcProject.tasks.named('check') {
+        dependsOn 'assertRobotFacingClasspath'
+    }
+}
+
+tasks.register('assertRobotFacingArtifacts') {
+    group = 'verification'
+    description = 'Robot-facing assembleReleaseArtifacts is pulse-core and pulse-ftc only.'
+    dependsOn ':pulse-ftc:assertRobotFacingClasspath'
+    doLast {
+        def actual = tasks.named('assembleReleaseArtifacts').get().dependsOn.flatten() as Set
+        def expected = [':pulse-core:assemble', ':pulse-ftc:assemble'] as Set
+        if (actual != expected) {
+            throw new GradleException(
+                    "assembleReleaseArtifacts depends on ${actual}, expected ${expected}.")
+        }
+        [':pulse-ftc-stubs', ':pulse-testkit'].each { path ->
+            if (project(path).pluginManager.hasPlugin('maven-publish')) {
+                throw new GradleException("${path} must not apply maven-publish")
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn 'assertRobotFacingArtifacts'
+}

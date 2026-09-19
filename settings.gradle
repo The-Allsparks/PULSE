@@ -1,0 +1,24 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'pulse'
+
+include 'pulse-core'
+include 'pulse-ftc-stubs'
+include 'pulse-ftc'
+include 'pulse-testkit'
+include 'pulse-examples'
+
+// Zero-auth student path: substitute org.allsparks:allsparks-contracts from a
+// sibling checkout. CI also accepts a nested clone at ./allsparks-contracts.
+def sibling = file('../allsparks-contracts/settings.gradle')
+def nested = file('allsparks-contracts/settings.gradle')
+if (sibling.exists()) {
+    includeBuild('../allsparks-contracts')
+} else if (nested.exists()) {
+    includeBuild('allsparks-contracts')
+}

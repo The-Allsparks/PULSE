@@ -1,0 +1,17 @@
+plugins {
+    id 'java-library'
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+                'Implementation-Title': 'PULSE FTC compile stubs (CI only)',
+                'Implementation-Version': archiveVersion
+        )
+    }
+}
