@@ -22,6 +22,10 @@ Keep `allsparks-contracts` as a sibling checkout so `includeBuild` substitutes t
 
 Coding agents: read [AGENTS.md](AGENTS.md) and [docs/architecture.md](docs/architecture.md).
 
+## GitHub Actions pins
+
+Workflows pin third-party actions to full commit SHAs with a version comment (for example `actions/checkout@<sha> # v7.0.1`). Do not switch back to floating major tags. Dependabot can still open PRs that move those pins. JUnit 6 majors are ignored: Hub libraries still compile tests for Java 8 bytecode.
+
 ## Line endings
 
 LF in the repository (see `.gitattributes`).
