@@ -32,7 +32,7 @@ new PinpointLocalizer(
                 new Velocity(pulse.pinpointVx, pulse.pinpointVy, pulse.pinpointOmega)));
 ```
 
-For localization that must stay coherent, TeamCode (not Pedro) should register a PULSE group. BumbleBee splits **hub-bulk** (drive encoders + AMPER voltage, `ReadBus.HUB_BULK`) from Hub IMU yaw (`ReadBus.I2C`) so the MANUAL packet fills before I²C. Pinpoint, OTOS, and OctoQuad should also be I²C when they are added.
+For localization that must stay coherent, TeamCode (not Pedro) should register a PULSE group. BumbleBee splits **hub-bulk** (drive encoders + AMPER voltage, `ReadBus.HUB_BULK`) from Hub IMU yaw and the Pinpoint (`ReadBus.I2C`) so the MANUAL packet fills before I²C. OTOS and OctoQuad belong on `I2C` the same way when a robot has them.
 
 ```java
 pulse.requireGroup(

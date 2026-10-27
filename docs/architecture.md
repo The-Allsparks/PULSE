@@ -138,10 +138,10 @@ PULSE deduplicates **logical getter calls**. It cannot merge unrelated I²C tran
 
 1. Required `HUB_BULK` (encoders, hub voltage, analog) — first getter after the clear fills one Lynx bulk packet; the rest of that bus are cache hits
 2. Required `OTHER`
-3. Required `I2C` (Hub IMU now; Pinpoint later)
+3. Required `I2C` (Hub IMU yaw, then Pinpoint pose)
 4. Optional readers in the same bus order
 
-TeamCode tags drive ticks and AMPER voltage `HUB_BULK` and puts them in coherent group `hub-bulk` so they share one due decision. Heading is `I2C` and is not in that group.
+TeamCode tags drive ticks and AMPER voltage `HUB_BULK` and puts them in coherent group `hub-bulk` so they share one due decision. Heading and the Pinpoint are `I2C` and are not in that group. `PulseAdapter` binds one Pinpoint supplier so `capture()` is the only `pinpoint.update()`.
 
 `PulseFtc.create` also runs `HubBulkFill.bind`: every `DcMotorEx` velocity / `isBusy` / `isOverCurrent`, every analog port, and every digital channel on the hardware map. Those fields are already in `cmdGetBulkInputData`. Encoder **position** keys stay TeamCode-owned. `MotorCurrentFill.bind` registers per-motor `getCurrent` as `onDemand` `OTHER` so AMPER can `requestOnce` after an over-current flag. A device added to the RC config later is sampled without a new TeamCode bind. Default `maxOnDemandOtherPerCapture` is 1 so two libraries cannot stack `getCurrent` in one loop; `PulseFtc.create` also sets a 15 ms on-demand OTHER deadline so a late capture skips the amp read and AMPER retries while the flag stays true.
 
